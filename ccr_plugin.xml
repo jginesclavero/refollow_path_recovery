@@ -1,0 +1,7 @@
+<library path="lib/librefollow_path_recovery">
+  <class name="refollow_path_recovery/RefollowPathRecovery" type="refollow_path_recovery::RefollowPathRecovery" base_class_type="nav_core::RecoveryBehavior">
+    <description>
+      A recovery behavior that refollow the path to unstack the robot.
+    </description>
+  </class>
+</library>
