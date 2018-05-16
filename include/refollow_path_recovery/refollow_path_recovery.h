@@ -46,9 +46,10 @@ namespace refollow_path_recovery{
       costmap_2d::Costmap2DROS* global_costmap_, *local_costmap_;
       std::string name_;
       tf::TransformListener* tf_;
-      bool initialized_,orientation_ready,turning;
+      bool initialized_,orientation_ready,turning,aborting;
       double sim_granularity_, min_rotational_vel_, max_rotational_vel_, acc_lim_th_, tolerance_, frequency_;
       tf::Quaternion orientation_;
+      ros::Timer timer;
 
 
   };

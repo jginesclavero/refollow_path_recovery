@@ -29,6 +29,7 @@ namespace refollow_path_recovery {
         initialized_ = true;
         orientation_ready = false;
         turning = false;
+        aborting = false;
       }else
         ROS_ERROR("You should not call initialize twice on this object, doing nothing");
 
@@ -37,6 +38,11 @@ namespace refollow_path_recovery {
     void RefollowPathRecovery::pathCallback(const nav_msgs::Path::ConstPtr& path){
       tf::quaternionMsgToTF(path->poses[5].pose.orientation, orientation_);
       orientation_ready = true;
+    }
+
+    void RefollowPathRecovery::timerCallback(const ros::TimerEvent&){
+      if (!orientation_ready)
+        aborting = true;
     }
 
     void RefollowPathRecovery::runBehavior(){
@@ -55,38 +61,40 @@ namespace refollow_path_recovery {
       ros::NodeHandle n;
       ros::Publisher vel_pub = n.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
       ros::Subscriber path_sub = n.subscribe("/move_base/GlobalPlanner/plan", 1, &RefollowPathRecovery::pathCallback,this);
-
       tf::Stamped<tf::Pose> global_pose;
+
       local_costmap_->getRobotPose(global_pose);
-
       double current_angle = -1.0 * M_PI;
-
       double start_offset = 0 - angles::normalize_angle(tf::getYaw(global_pose.getRotation()));
+
       while(n.ok()){
-          if (orientation_ready){
-            global_costmap_->getRobotPose(global_pose);
-            double norm_angle = angles::normalize_angle(tf::getYaw(global_pose.getRotation()));
-            current_angle = angles::normalize_angle(norm_angle + start_offset);
-            double orientation_yaw = angles::normalize_angle(tf::getYaw(orientation_));
-            double dist_left = fabs(orientation_yaw - current_angle);
+        timer	=	nh_.createTimer(ros::Duration(3),&RefollowPathRecovery::timerCallback,this);
 
-            if(turning && dist_left < 0.2){
-              return;
-            }
+        if (orientation_ready){
+          global_costmap_->getRobotPose(global_pose);
+          double norm_angle = angles::normalize_angle(tf::getYaw(global_pose.getRotation()));
+          current_angle = angles::normalize_angle(norm_angle + start_offset);
+          double orientation_yaw = angles::normalize_angle(tf::getYaw(orientation_));
+          double dist_left = fabs(orientation_yaw - current_angle);
 
-            if(dist_left > 2.5 || turning){
-                turning = true;
-                geometry_msgs::Twist cmd_vel;
-                cmd_vel.linear.x = 0.0;
-                cmd_vel.linear.y = 0.0;
-                cmd_vel.angular.z = 0.2;
-                vel_pub.publish(cmd_vel);
-            }
+          if(turning && dist_left < 0.2)
+            return;
+
+          if(dist_left > 2.5 || turning){
+              turning = true;
+              geometry_msgs::Twist cmd_vel;
+              cmd_vel.linear.x = 0.0;
+              cmd_vel.linear.y = 0.0;
+              cmd_vel.angular.z = 0.2;
+              vel_pub.publish(cmd_vel);
           }
-          ros::spinOnce();
-          r.sleep();
+        }
+
+        if(aborting)
+          return;
+
+        ros::spinOnce();
+        r.sleep();
       }
-
     }
-
   };
