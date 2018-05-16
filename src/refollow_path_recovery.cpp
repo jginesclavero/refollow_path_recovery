@@ -66,10 +66,9 @@ namespace refollow_path_recovery {
       local_costmap_->getRobotPose(global_pose);
       double current_angle = -1.0 * M_PI;
       double start_offset = 0 - angles::normalize_angle(tf::getYaw(global_pose.getRotation()));
+      timer	=	n.createTimer(ros::Duration(3),&RefollowPathRecovery::timerCallback,this,true);
 
       while(n.ok()){
-        timer	=	nh_.createTimer(ros::Duration(3),&RefollowPathRecovery::timerCallback,this);
-
         if (orientation_ready){
           global_costmap_->getRobotPose(global_pose);
           double norm_angle = angles::normalize_angle(tf::getYaw(global_pose.getRotation()));

@@ -43,6 +43,7 @@ namespace refollow_path_recovery{
 
     private:
       void pathCallback(const nav_msgs::Path::ConstPtr& path);
+      void timerCallback(const ros::TimerEvent&);
       costmap_2d::Costmap2DROS* global_costmap_, *local_costmap_;
       std::string name_;
       tf::TransformListener* tf_;
