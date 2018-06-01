@@ -37,6 +37,7 @@ namespace refollow_path_recovery {
 
     void RefollowPathRecovery::pathCallback(const nav_msgs::Path::ConstPtr& path){
       tf::quaternionMsgToTF(path->poses[5].pose.orientation, orientation_);
+      ROS_INFO("orientation ready");
       orientation_ready = true;
     }
 
@@ -69,17 +70,23 @@ namespace refollow_path_recovery {
       timer	=	n.createTimer(ros::Duration(3),&RefollowPathRecovery::timerCallback,this,true);
 
       while(n.ok()){
+        ROS_WARN("While");
         if (orientation_ready){
           global_costmap_->getRobotPose(global_pose);
           double norm_angle = angles::normalize_angle(tf::getYaw(global_pose.getRotation()));
           current_angle = angles::normalize_angle(norm_angle + start_offset);
           double orientation_yaw = angles::normalize_angle(tf::getYaw(orientation_));
+          ROS_WARN("orientation_yaw  %f",orientation_yaw);
+          ROS_WARN("current_angle %f",current_angle);
           double dist_left = fabs(orientation_yaw - current_angle);
-
-          if(turning && dist_left < 0.2)
+          ROS_WARN("dist left %f",dist_left);
+          if(turning && dist_left < 0.2){
+            ROS_WARN("stop send velocities");
             return;
+          }
 
           if(dist_left > 2.5 || turning){
+              ROS_WARN("sending velocities");
               turning = true;
               geometry_msgs::Twist cmd_vel;
               cmd_vel.linear.x = 0.0;
